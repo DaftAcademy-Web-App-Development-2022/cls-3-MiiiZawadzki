@@ -1,12 +1,41 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { dbConnect } from "~/libraries/mongoose.library";
+import { Playlist } from "~/models/Playlist.model";
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<Response>
 ) {
+  const { id } = req.query;
   await dbConnect();
-  res.status(200).send({});
+
+  if (req.method === "GET") {
+    const playlist = await getPlaylist(id as string);
+    res.status(200).send({ data: playlist });
+  }
+  else if (req.method === "DELETE") {
+    await deletePlaylist(id as string);
+    res.status(200).send({ data: null });
+  }
+}
+
+async function getPlaylist(id: string) {
+  const result = await Playlist.findById(id);
+  if (result === null) return null;
+  const playlist = result.toObject();
+  return {
+    name: playlist.name,
+    owner: playlist.owner,
+    slug: playlist.slug,
+    spotifyId: playlist.spotifyId,
+    upvote: playlist.upvote,
+    color: playlist.color,
+    id: playlist._id.toString(),
+  };
+}
+
+async function deletePlaylist(id: string) {
+  await Playlist.findByIdAndDelete(id);
 }
 
 export type Response = any;
